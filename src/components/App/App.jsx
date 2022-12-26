@@ -5,7 +5,8 @@ import { ContactList } from '../ContactList/ContactList';
 import { Filter } from '../Filter/Filter';
 import { GlobalStyle } from './GlobalStyles';
 import { ContactsWrapper, Title, Wrapper } from './App.styled';
-import { exempleContacts } from 'data/exempleContacts';
+import { exempleContacts } from 'helpers/exempleContacts';
+import { getContactsFromLocalStorage } from 'helpers/getLocalContacts';
 
 export const App = () => {
   const [contacts, setContacts] = useState(
@@ -13,13 +14,6 @@ export const App = () => {
   );
 
   const [filter, setFilter] = useState('');
-
-  function getContactsFromLocalStorage() {
-    const savedContacts = window.localStorage.getItem('contacts');
-    if (savedContacts !== null && savedContacts.length > 0) {
-      return [...JSON.parse(savedContacts)];
-    }
-  }
 
   useEffect(
     () => window.localStorage.setItem('contacts', JSON.stringify(contacts)),
