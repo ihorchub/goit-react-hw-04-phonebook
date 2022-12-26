@@ -1,94 +1,69 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { nanoid } from 'nanoid';
 import { ContactForm } from '../ContactForm/ContactForm';
 import { ContactList } from '../ContactList/ContactList';
 import { Filter } from '../Filter/Filter';
 import { GlobalStyle } from './GlobalStyles';
 import { ContactsWrapper, Title, Wrapper } from './App.styled';
+import { exempleContacts } from 'data/exempleContacts';
 
-export class App extends Component {
-  static defaultProps = {
-    exempleContacts: [
-      { id: 'id-1', name: 'Fire department', number: '101' },
-      { id: 'id-2', name: 'Police', number: '102' },
-      { id: 'id-3', name: 'Ambulance', number: '103' },
-      { id: 'id-4', name: 'Gas service', number: '104' },
-      { id: 'id-5', name: 'Emergency service', number: '112' },
-    ],
-  };
+export const App = () => {
+  const [contacts, setContacts] = useState(
+    () => getContactsFromLocalStorage() ?? exempleContacts
+  );
 
-  state = {
-    contacts: [],
-    filter: '',
-  };
+  const [filter, setFilter] = useState('');
 
-  componentDidUpdate(_, prevState) {
-    if (prevState.contacts !== this.state.contacts) {
-      localStorage.setItem('contacts', JSON.stringify(this.state.contacts));
+  function getContactsFromLocalStorage() {
+    const savedContacts = window.localStorage.getItem('contacts');
+    if (savedContacts !== null && savedContacts.length > 0) {
+      return [...JSON.parse(savedContacts)];
     }
   }
 
-  componentDidMount() {
-    const savedContacts = localStorage.getItem('contacts');
+  useEffect(
+    () => window.localStorage.setItem('contacts', JSON.stringify(contacts)),
+    [contacts]
+  );
 
-    if (savedContacts !== null) {
-      this.setState({ contacts: JSON.parse(savedContacts) });
-    } else {
-      this.setState({ contacts: this.props.exempleContacts });
-    }
-  }
-
-  formSubmitHandler = data => {
+  const formSubmitHandler = data => {
     const newContact = { id: nanoid(), ...data };
 
-    this.state.contacts.find(
+    contacts.find(
       contact => contact.name.toLowerCase() === data.name.toLowerCase()
     )
       ? alert(`${data.name} is already in contacts.`)
-      : this.setState(prevState => ({
-          contacts: [newContact, ...prevState.contacts],
-        }));
+      : setContacts(prevState => [newContact, ...prevState]);
   };
 
-  changeFilter = e => {
-    this.setState({ filter: e.currentTarget.value });
-  };
+  const changeFilter = e => setFilter(e.currentTarget.value);
 
-  getVisibleContacts = () => {
-    const { filter, contacts } = this.state;
+  const getVisibleContacts = () => {
     const normalizedFilter = filter.toLowerCase();
-
     return contacts.filter(contact =>
       contact.name.toLowerCase().includes(normalizedFilter)
     );
   };
 
-  deleteContact = id => {
-    this.setState(prevState => ({
-      contacts: prevState.contacts.filter(contact => contact.id !== id),
-    }));
-  };
+  const deleteContact = id =>
+    setContacts(prevState => prevState.filter(contact => contact.id !== id));
 
-  render() {
-    const { filter } = this.state;
+  return (
+    <>
+      <Wrapper>
+        <Title>Phonebook</Title>
+        <ContactForm formSubmit={formSubmitHandler} />
 
-    return (
-      <>
-        <Wrapper>
-          <Title>Phonebook</Title>
-          <ContactForm formSubmit={this.formSubmitHandler} />
-
-          <ContactsWrapper>
-            <h2>Contacts</h2>
-            <Filter value={filter} onChange={this.changeFilter} />
-            <ContactList
-              contactList={this.getVisibleContacts()}
-              onDeleteContact={this.deleteContact}
-            />
-          </ContactsWrapper>
-        </Wrapper>
-        <GlobalStyle />
-      </>
-    );
-  }
-}
+        <ContactsWrapper>
+          <h2>Contacts</h2>
+          <Filter value={filter} onChange={changeFilter} />
+          <ContactList
+            contactList={getVisibleContacts()}
+            onDeleteContact={deleteContact}
+          />
+        </ContactsWrapper>
+      </Wrapper>
+      <GlobalStyle />
+    </>
+  );
+};
